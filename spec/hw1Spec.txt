@@ -1,0 +1,184 @@
+If there is any different between hw1.txt and hw1Spec.txt, please follow the rule in hw1Spec.txt.
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+Input spec:
+
+1.	The length of a single-line input will not exceed 15000 characters.
+	There may be huge number of commands in a single-line input.
+	Each command will not exceed 256 characters.
+
+2.	There must be one or more spaces between commands and symbols (or arguments.),
+	but no spaces between pipe and numbers.
+
+	e.g. cat hello.txt | number
+	     cat hello.txt |1 !1 number
+
+3.	There will not be any '/' character in demo input.
+
+4.	Pipe ("|") will not come with "printenv" and "setenv."
+
+5.	Use '% ' as the command line prompt.
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+About server:
+
+1.	The welcome message MUST been shown as follows:
+****************************************
+** Welcome to the information server. **
+****************************************
+
+2.	Close the connection between the server and the client immediately when the server receive "exit".
+
+3.	Note that the forked process of server MUST be killed when the connection to the client is closed.
+	Otherwise, there may be lots zombie processes.
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+About parsing:
+
+1.	If there is command not found, print as follows:
+	Unknown command: [command].
+
+e.g. 	% ctt
+		Unknown command: [ctt].
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+About a numbered-pipe
+
+1.	|N means the stdout of last process should be piped to the first legal process of next Nth command, where 1 <= N <= 1000.
+
+2.	!N means the stderr of last process should be piped to the first legal process of next Nth command, where 1 <= N <= 1000.
+
+e.g.
+	1. % A | B |2
+	2. % C | D |1
+	3. % E | F
+	This means the first command last process "B" stdout will pipe to the third command first process "E",
+	       and the second command last process "D" stdout will pipe to the third command first porcess "E".
+
+Note:
+	process means one instruction like "ls", "number", "cat hello.txt"...
+	command means the combination of server process in one line
+	e.g.
+		"% cat hello.txt | number | number !2" is one command with three porcess "cat hello.txt", "number", "number"
+
+3.	|N and !N only appear at the end of line, and they can appear at the same time.
+
+e.g.
+	% cat hello.txt | number | number !2		(O)
+	% cat hello.txt | number | number |3		(O)
+	% cat hello.txt | number | number !2 |3		(O)
+	% cat hello.txt | number | number |3 !2		(O)
+	% cat hello.txt |1 number |1 number |1		(X,|N will only appear at the end of line)
+
+4.	If there is any error in a input line, the line number should not count.
+
+e.g.
+	% ls |1
+	% ctt               <= unknown command, process number is not counted
+	Unknown command: [ctt].
+	% number
+	1	bin/
+	2	test.html
+	
+4.	In our testing data, we will use pipe or numbered-pipe after unknown command like "ls | ctt | cat" or "ls | ctt |1". 
+	In this case, process will stop when running unknown command, so the command or numbered-pipe after unknown command will not execute and numbered-pipe will not be counted.
+
+e.g.
+	% ls | ctt | cat
+	Unknown command: [ctt].
+	% number
+	This will pipe "ls" stdout to next process "ctt", since "ctt" is error process, it will do nothing.
+	And the next line command "number" will not receive any input.
+	
+5.	If mutiple commands output to the same pipe, the output should be ordered, not mixed.
+
+e.g.
+	% ls |3
+	% removetag test.html |2
+	% ls |1
+	% cat   <= cat will not execute and numbered-pipe will not be counted.
+	bin/
+	test.html
+	
+	Test
+	This is a test program
+	for ras.
+
+	bin/
+	test.html
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+About submit format:
+(Please follow the format to submit the project, or you won't get full score in the project.)
+
+1.	create a directory named your student ID, put all your code in the same directory layer
+
+2.	zip the directory (Attention!! we only accept .zip format), upload the .zip to the E3 platform
+
+e.g.
+	I create a directory 0256049, in that directory may have
+
+	/0256049/server.cpp
+	/0256049/socket.cpp
+	/0256049/Makefile	(you should add makefile that we can compile your program)
+	...
+	
+	
+	zip it and get 0256049.zip, finally upload 0256049.zip to E3
+
+	The most important announcement is that we take plagiarism very seriously.
+	All projects will be checked for plagiarism.
+	Any cases that have been discovered will be reported to the instructors and will get zero on this project.
+	
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+About server:
+(Choose your server according to the last digit of your student ID)
+
+server						the last digit
+npbsd0.cs.nctu.edu.tw			0
+npbsd1.cs.nctu.edu.tw			1
+npbsd2.cs.nctu.edu.tw			2
+npbsd3.cs.nctu.edu.tw			3
+npbsd4.cs.nctu.edu.tw			4
+nplinux0.cs.nctu.edu.tw			5
+nplinux1.cs.nctu.edu.tw			6
+nplinux2.cs.nctu.edu.tw			7
+nplinux3.cs.nctu.edu.tw			8
+nplinux4.cs.nctu.edu.tw			9
+
+e.g.	0256049  use  nplinux4.cs.nctu.edu.tw
+(If you do not have a workstation account, you need to visit the website: https://www.cs.nctu.edu.tw/cscc/account/ and apply for a workstation account at the computer center of CSIE deparment.)
+
+If your server have any problem, please choose another server with less user.
+(Command: who -q)
+
+Note:
+
+1.	Any abuse of system will be recorded.
+
+2.	NP project should be run on NP server, or your account will be locked.
+
+3.	Be sure to clean zombie process.
+	(Command: ps aux | less)
+
+4.	Don't attack other student's program!
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+Other proposed:
+
+1.	There must be "ls", "cat", "removetag", "removetag0", "number¡¨ in "bin/" of ¡§ras/¡§.
+
+2.	You have to execute the files in "bin/" with an "exec()"-based function.(eg. execvp() or execlp() ...)
+
+3.	Two of the commands (ls and cat) used in the homework are placed in the folder /bin.
+	Please copy them in the folder ~/ras/bin/.
+	(Example: cp /bin/ls /bin/cat ~/ras/bin/)
+	
+4.	Other commands, such as noop, number, removetag and remoetag0 are all packaged in the commands.rar.
+	Please compile them by yourself and put the executable file into folder ~/ras/bin/.
+	(Compile example: g++ noop.cpp -o ~/ras/bin/noop)
+
+5.	After completing the server , you can test how it works by using telnet.
+	(Command: telnet nplinux1.cs.nctu.edu.tw [port])
+	By the way, if the OS of your computer is Win7, the telnet is closed in default, you can follow this link to open it:
+	http://vbagbk.pixnet.net/blog/post/25127665-windows-7-%E4%BD%BF%E7%94%A8-telnet-%E9%80%A3%E4%B8%8A-ptt-(%E5%9C%96%E6%96%87%E6%95%99%E5%AD%B8)
