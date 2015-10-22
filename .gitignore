@@ -3,6 +3,7 @@
 /ras/bin/removetag
 /ras/bin/removetag0
 /ras_server
+/shell
 
 *.swp
 *.d

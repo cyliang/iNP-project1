@@ -2,11 +2,13 @@ RAS_ROOT?=$(shell echo $$HOME)/ras
 RAS_BIN=$(RAS_ROOT)/bin
 
 CC:=$(CXX)
-CPPFLAGS='-DRAS_ROOT="$(abspath RAS_ROOT)"'
+CPPFLAGS='-DRAS_ROOT="$(abspath $(RAS_ROOT))"'
 OUTPUT_OPTION=-MMD -MP -o $@
 LDLIBS=
 
 ######################## Source Code Compilation ##########################
+all: ras_server shell
+
 SRC=$(wildcard *.cpp)
 OBJ=$(SRC:.cpp=.o)
 DEP=$(SRC:.cpp=.d)
@@ -14,10 +16,12 @@ DEP=$(SRC:.cpp=.d)
 
 .PHONY: clean
 
-ras_server: $(OBJ)
+ras_server: ras_server.o
+
+shell: $(filter-out ras_server.o, $(OBJ))
 
 clean:
-	rm -f $(OBJ) $(DEP) ras_server
+	rm -f $(OBJ) $(DEP) ras_server shell
 ###########################################################################
 
 
