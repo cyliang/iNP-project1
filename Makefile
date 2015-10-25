@@ -31,6 +31,7 @@ CMD_TARGETS=$(addprefix $(RAS_BIN)/, $(basename $(notdir $(wildcard commands/*.c
 .PHONY: commands clean_commands
 
 commands: $(RAS_BIN) $(CMD_TARGETS)
+	cp /bin/{cat,ls} $(RAS_BIN)
 
 $(RAS_BIN):
 	mkdir $(RAS_BIN)

@@ -2,6 +2,8 @@
 /ras/bin/number
 /ras/bin/removetag
 /ras/bin/removetag0
+/ras/bin/ls
+/ras/bin/cat
 /ras_server
 /shell
 
