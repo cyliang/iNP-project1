@@ -24,7 +24,6 @@ void parse_cmd(istream &cmd);
 map<string, string> env_variables;
 
 int main() {
-	chdir(RAS_ROOT);
 	signal(SIGCHLD, SIG_IGN);
 	env_variables["PATH"] = "bin:.";
 

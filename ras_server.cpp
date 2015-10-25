@@ -13,6 +13,16 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 
+	char *execute_directory = getwd(NULL);
+	char shell_path[strlen(execute_directory) + 10];
+	sprintf(shell_path, "%s/shell", execute_directory);
+	free(execute_directory);
+
+	if (chdir(RAS_ROOT) == -1) {
+		fprintf(stderr, "Unable to change current directory to \"%s\".\n", RAS_ROOT);
+		exit(1);
+	}
+
 	int listen_fd;
 	struct sockaddr_in listen_addr;
 	memset(&listen_addr, 0, sizeof(listen_addr));
@@ -36,7 +46,7 @@ int main(int argc, char *argv[]) {
 
 	while(1) {
 		int accept_fd = accept(listen_fd, NULL, NULL);
-		if (fork() == 0) {
+		if (accept_fd >= 0 && fork() == 0) {
 			dup2(accept_fd, STDOUT_FILENO);
 			dup2(accept_fd, STDERR_FILENO);
 			dup2(accept_fd, STDIN_FILENO);
@@ -44,7 +54,9 @@ int main(int argc, char *argv[]) {
 			close(accept_fd);
 			close(listen_fd);
 
-			execlp("./shell", "./shell", NULL);
+			execlp(shell_path, shell_path, NULL);
+			fputs("Fail to start the shell", stderr);
+			exit(3);
 		}
 
 		close(accept_fd);
