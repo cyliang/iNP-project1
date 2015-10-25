@@ -2,8 +2,13 @@
 #include <string>
 #include <sstream>
 #include <map>
+#include <vector>
 #include <cstdlib>
+#include <cstring>
 #include <unistd.h>
+#include <signal.h>
+#include "pipe.h"
+#include "process.h"
 using namespace std;
 
 inline
@@ -20,7 +25,9 @@ map<string, string> env_variables;
 
 int main() {
 	chdir(RAS_ROOT);
+	signal(SIGCHLD, SIG_IGN);
 	env_variables["PATH"] = "bin:.";
+
 	cout
 		<< "****************************************\n"
 		<< "** Welcome to the information server. **\n"
@@ -51,6 +58,7 @@ bool special_cmd(istream &cmd) {
 		cmd >> arg >> arg2;
 		env_variables[arg] = arg2;
 	} else {
+		cmd.seekg(0);
 		return false;
 	}
 
@@ -59,5 +67,16 @@ bool special_cmd(istream &cmd) {
 
 void parse_cmd(istream &cmd) {
 	string arg;
-	cout << "Not parsed yet!" << endl;
+	vector<string> argv;
+	while ((cmd >> arg) && !strchr("|!>", arg[0])) {
+		argv.push_back(arg);
+	}
+
+	if (!create_process(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO, argv, env_variables["PATH"].c_str())) {
+		cout << "Unknown command: [" << argv[0] << "]." << endl;
+		return;
+	}
+
+	int exit_status;
+	wait(&exit_status);
 }
