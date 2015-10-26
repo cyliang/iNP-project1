@@ -31,6 +31,12 @@ bool create_process(int in_fd, int out_fd, int err_fd, const std::vector<std::st
 		dup2(in_fd, STDIN_FILENO);
 		dup2(out_fd, STDOUT_FILENO);
 		dup2(err_fd, STDERR_FILENO);
+		if (in_fd != STDIN_FILENO)
+			close(in_fd);
+		if (out_fd != STDOUT_FILENO)
+			close(out_fd);
+		if (err_fd != STDERR_FILENO)
+			close(err_fd);
 
 		execvP(argv[0], path, (char **) argv);
 
