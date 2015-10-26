@@ -5,7 +5,6 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <cstdlib>
-#include <iostream>
 
 inline
 void _convert_argv(const char *argv[], const std::vector<std::string> &vec) {
@@ -20,10 +19,11 @@ bool create_process(int in_fd, int out_fd, int err_fd, const std::vector<std::st
 	const char *argv[argv_vector.size() + 1];
 	_convert_argv(argv, argv_vector);
 
+	int pid;
 	int check_pipe[2];
 	pipe(check_pipe);
 
-	if (fork() == 0) {
+	if ((pid = fork()) == 0) {
 		// child
 		close(check_pipe[0]);
 		fcntl(check_pipe[1], F_SETFD, FD_CLOEXEC);
@@ -51,6 +51,8 @@ bool create_process(int in_fd, int out_fd, int err_fd, const std::vector<std::st
 	if (read(check_pipe[0], (void *) &child_err, sizeof(child_err))) {
 		// The child fail to exec
 		close(check_pipe[0]);
+		int exit_status;
+		waitpid(pid, &exit_status, 0);
 		return false;
 	}
 

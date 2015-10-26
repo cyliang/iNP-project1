@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstdlib>
 #include <cstring>
+#include <cctype>
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -65,54 +66,119 @@ bool special_cmd(istream &cmd) {
 	return true;
 }
 
-void parse_cmd(istream &cmd) {
-	/* Processing command's arguments. */
+inline
+vector<string> get_argv(istream &cmd) {
 	string arg;
 	vector<string> argv;
 	while ((cmd >> ws) && !strchr("|!>", cmd.peek()) && (cmd >> arg)) {
 		argv.push_back(arg);
 	}
 
-	/* Processing command's I/O redirection. */
-	int newps_stdin = STDIN_FILENO;
-	int newps_stdout = STDOUT_FILENO;
-	int newps_stderr = STDERR_FILENO;
+	return argv;
+}
 
-	bool file_redirection = false;
-	while ((cmd >> ws) && strchr("|!>", cmd.peek())) {
-		switch (cmd.get()) {
-			case '>':
-				cmd >> arg; // file name
+void parse_cmd(istream &cmd) {
+	int running_ps = 0;
+	bool terminate = false;
+	Pipe *inPipe = NULL, *outPipe = NULL;
+	
+	while (cmd && !terminate) {
+		/* Processing command's arguments. */
+		vector<string> argv = get_argv(cmd);
 
-				if (newps_stdout != STDOUT_FILENO)
+		/* Processing command's I/O redirection. */
+		int newps_stdin;
+		int newps_stdout = STDOUT_FILENO;
+		int newps_stderr = STDERR_FILENO;
+
+		inPipe = outPipe;
+		outPipe = NULL;
+		if (!running_ps) {
+			if ((newps_stdin = Pipe::front()) == -1)
+				newps_stdin = STDIN_FILENO;
+		} else {
+			newps_stdin = inPipe->read_fd();
+		}
+
+		int stdout_at = -1;
+		int stderr_at = -1;
+		bool file_redirection = false;
+		while ((cmd >> ws) && strchr("|!>", cmd.peek())) {
+			switch (cmd.get()) {
+				case '|':
+					if (isdigit(cmd.peek())) {
+						// Number pipe
+						int pipe_at;
+						cmd >> pipe_at;
+
+						if (newps_stdout == STDOUT_FILENO) {
+							stdout_at = pipe_at;
+							newps_stdout = Pipe::append_at(pipe_at);
+						}
+					} else if (newps_stdout == STDOUT_FILENO) {
+						outPipe = new Pipe();
+						newps_stdout = outPipe->write_fd();
+					}
+
 					break;
 
-				newps_stdout = open(arg.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 000777);
+				case '!':
+					if (isdigit(cmd.peek())) {
+						int pipe_at;
+						cmd >> pipe_at;
 
-				if (newps_stdout == -1) {
-					cout << "Cannot open file: " << arg << endl;
-					return;
-				}
-				file_redirection = true;
-				break;
+						if (newps_stderr == STDERR_FILENO) {
+							stderr_at = pipe_at;
+							newps_stderr = Pipe::append_at(pipe_at);
+						}
+					}
+					break;
 
-			case '|':
-				break;
+				case '>':
+					string filename;
+					cmd >> filename; // file name
 
-			case '!':
-				break;
+					if (newps_stdout != STDOUT_FILENO)
+						break;
+
+					newps_stdout = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 000777);
+
+					if (newps_stdout == -1) {
+						cout << "Cannot open file: " << filename << endl;
+						delete inPipe;
+						return;
+					}
+					file_redirection = true;
+					break;
+			}
 		}
+
+		/* Launching the command. */
+		if (create_process(newps_stdin, newps_stdout, newps_stderr, argv, env_variables["PATH"].c_str())) {
+			running_ps++;
+		} else {
+			if (stdout_at != -1)
+				Pipe::cancel_at(stdout_at);
+			if (stderr_at != -1)
+				Pipe::cancel_at(stderr_at);
+
+			cout << "Unknown command: [" << argv[0] << "]." << endl;
+			terminate = true;
+		}
+
+		delete inPipe;
+		if (file_redirection) {
+			close(newps_stdout);
+		}
+
+		terminate |= file_redirection || stdout_at != -1 || stderr_at != -1;
 	}
 
-	/* Launching the command. */
-	if (create_process(newps_stdin, newps_stdout, newps_stderr, argv, env_variables["PATH"].c_str())) {
-		int exit_status;
+	delete outPipe;
+	if (running_ps)
+		Pipe::pop();
+
+	int exit_status;
+	while (running_ps--)
 		wait(&exit_status);
-	} else {
-		cout << "Unknown command: [" << argv[0] << "]." << endl;
-	}
-
-	if (file_redirection) {
-		close(newps_stdout);
-	}
 }
