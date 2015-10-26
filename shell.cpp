@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <unistd.h>
+#include <fcntl.h>
 #include <signal.h>
 #include "pipe.h"
 #include "process.h"
@@ -65,17 +66,53 @@ bool special_cmd(istream &cmd) {
 }
 
 void parse_cmd(istream &cmd) {
+	/* Processing command's arguments. */
 	string arg;
 	vector<string> argv;
-	while ((cmd >> arg) && !strchr("|!>", arg[0])) {
+	while ((cmd >> ws) && !strchr("|!>", cmd.peek()) && (cmd >> arg)) {
 		argv.push_back(arg);
 	}
 
-	if (!create_process(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO, argv, env_variables["PATH"].c_str())) {
-		cout << "Unknown command: [" << argv[0] << "]." << endl;
-		return;
+	/* Processing command's I/O redirection. */
+	int newps_stdin = STDIN_FILENO;
+	int newps_stdout = STDOUT_FILENO;
+	int newps_stderr = STDERR_FILENO;
+
+	bool file_redirection = false;
+	while ((cmd >> ws) && strchr("|!>", cmd.peek())) {
+		switch (cmd.get()) {
+			case '>':
+				cmd >> arg; // file name
+
+				if (newps_stdout != STDOUT_FILENO)
+					break;
+
+				newps_stdout = open(arg.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 000777);
+
+				if (newps_stdout == -1) {
+					cout << "Cannot open file: " << arg << endl;
+					return;
+				}
+				file_redirection = true;
+				break;
+
+			case '|':
+				break;
+
+			case '!':
+				break;
+		}
 	}
 
-	int exit_status;
-	wait(&exit_status);
+	/* Launching the command. */
+	if (create_process(newps_stdin, newps_stdout, newps_stderr, argv, env_variables["PATH"].c_str())) {
+		int exit_status;
+		wait(&exit_status);
+	} else {
+		cout << "Unknown command: [" << argv[0] << "]." << endl;
+	}
+
+	if (file_redirection) {
+		close(newps_stdout);
+	}
 }
