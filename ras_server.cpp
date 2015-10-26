@@ -22,6 +22,7 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, "Unable to change current directory to \"%s\".\n", RAS_ROOT);
 		exit(1);
 	}
+	signal(SIGCHLD, SIG_IGN);
 
 	int listen_fd;
 	struct sockaddr_in listen_addr;
