@@ -1,5 +1,6 @@
 #include "pipe.h"
 #include <unistd.h>
+#include <fcntl.h>
 
 std::deque<Pipe> Pipe::pending_pipes(1000);
 
@@ -21,12 +22,13 @@ void Pipe::pop() {
 }
 
 Pipe::Pipe(): input_count(0) {
-	pipe_fd[0] = pipe_fd[1] = -1;
 }
 
 int Pipe::write_fd() {
 	if (!input_count) {
 		pipe(pipe_fd);
+		fcntl(pipe_fd[0], F_SETFD, FD_CLOEXEC);
+		fcntl(pipe_fd[1], F_SETFD, FD_CLOEXEC);
 	}
 
 	input_count++;
@@ -37,24 +39,16 @@ void Pipe::cancel_write() {
 	if (!--input_count) {
 		close(pipe_fd[1]);
 		close(pipe_fd[0]);
-		pipe_fd[0] = pipe_fd[1] = -1;
 	}
 }
 
 int Pipe::read_fd() {
-	if (input_count) {
-		close(pipe_fd[1]);
-		pipe_fd[1] = -1;
-		return pipe_fd[0];
-	}
-
-	return -1;
+	return input_count ? pipe_fd[0] : -1;
 }
 
 Pipe::~Pipe() {
 	if (input_count) {
 		close(pipe_fd[1]);
 		close(pipe_fd[0]);
-		pipe_fd[1] = pipe_fd[0] = -1;
 	}
 }

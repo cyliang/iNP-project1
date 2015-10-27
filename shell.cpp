@@ -141,7 +141,7 @@ void parse_cmd(istream &cmd) {
 					if (newps_stdout != STDOUT_FILENO)
 						break;
 
-					newps_stdout = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 000777);
+					newps_stdout = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 000777);
 
 					if (newps_stdout == -1) {
 						cout << "Cannot open file: " << filename << endl;
