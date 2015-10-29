@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <map>
 #include <vector>
 #include <cstdlib>
 #include <cstring>
@@ -25,11 +24,9 @@ bool prompt(string &line) {
 bool special_cmd(istream &cmd);
 void parse_cmd(istream &cmd);
 
-map<string, string> env_variables;
-
 int main() {
 	signal(SIGCHLD, SIG_IGN);
-	env_variables["PATH"] = "bin:.";
+	setenv("PATH", "bin:.", 1);
 
 	cout
 		<< "****************************************\n"
@@ -53,13 +50,14 @@ bool special_cmd(istream &cmd) {
 		exit(0);
 	} else if (arg == "printenv") {
 		cmd >> arg;
-		if (env_variables.count(arg))
-			cout << arg << "=" << env_variables[arg] << endl;
+		const char *val = getenv(arg.c_str());
+		if (val)
+			cout << arg << "=" << val << endl;
 	} else if (arg == "setenv") {
 		string arg2;
 
 		cmd >> arg >> arg2;
-		env_variables[arg] = arg2;
+		setenv(arg.c_str(), arg2.c_str(), 1);
 	} else {
 		cmd.seekg(0);
 		return false;
@@ -156,7 +154,7 @@ void parse_cmd(istream &cmd) {
 		}
 
 		/* Launching the command. */
-		if (create_process(newps_stdin, newps_stdout, newps_stderr, argv, env_variables["PATH"].c_str())) {
+		if (create_process(newps_stdin, newps_stdout, newps_stderr, argv)) {
 			running_ps++;
 		} else {
 			if (stdout_at != -1)

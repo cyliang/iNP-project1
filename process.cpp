@@ -16,7 +16,7 @@ void _convert_argv(const char *argv[], const std::vector<std::string> &vec) {
 	argv[vec.size()] = NULL;
 }
 
-bool create_process(int in_fd, int out_fd, int err_fd, const std::vector<std::string> &argv_vector, const char *path) {
+bool create_process(int in_fd, int out_fd, int err_fd, const std::vector<std::string> &argv_vector) {
 	const char *argv[argv_vector.size() + 1];
 	_convert_argv(argv, argv_vector);
 
@@ -33,7 +33,7 @@ bool create_process(int in_fd, int out_fd, int err_fd, const std::vector<std::st
 		dup2(out_fd, STDOUT_FILENO);
 		dup2(err_fd, STDERR_FILENO);
 
-		execvP(argv[0], path, (char **) argv);
+		execvp(argv[0], (char **) argv);
 
 		write(check_pipe[1], (void *) &errno, sizeof(errno));
 		close(check_pipe[1]);
