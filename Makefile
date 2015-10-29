@@ -2,7 +2,7 @@ RAS_ROOT?=$(shell echo $$HOME)/ras
 RAS_BIN=$(RAS_ROOT)/bin
 
 CC:=$(CXX)
-CPPFLAGS='-DRAS_ROOT="$(abspath $(RAS_ROOT))"'
+CXXFLAGS='-DRAS_ROOT="$(abspath $(RAS_ROOT))"'
 OUTPUT_OPTION=-MMD -MP -o $@
 LDLIBS=
 
