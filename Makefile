@@ -1,4 +1,5 @@
 RAS_ROOT?=$(shell echo $$HOME)/ras
+TEST_DATA?=test_data
 RAS_BIN=$(RAS_ROOT)/bin
 
 CC:=$(CXX)
@@ -24,6 +25,11 @@ clean:
 	rm -f $(OBJ) $(DEP) ras_server shell
 ###########################################################################
 
+############################ Test Environment #############################
+.PHONY: test
+test: clean_commands commands
+	cp $(TEST_DATA)/test.html $(RAS_ROOT)
+###########################################################################
 
 ######################## Environment Compilation ##########################
 CMD_TARGETS=$(addprefix $(RAS_BIN)/, $(basename $(notdir $(wildcard commands/*.cpp))))
