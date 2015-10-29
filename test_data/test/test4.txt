@@ -997,6 +997,7 @@ noop
 noop
 noop
 noop
+noop
 number | cat
 exit
 
