@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <signal.h>
 
 int main(int argc, char *argv[]) {
 	if(argc != 2) {
@@ -13,7 +14,7 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 
-	char *execute_directory = getwd(NULL);
+	char *execute_directory = getcwd(NULL, 0);
 	char shell_path[strlen(execute_directory) + 10];
 	sprintf(shell_path, "%s/shell", execute_directory);
 	free(execute_directory);

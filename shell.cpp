@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include "pipe.h"
 #include "process.h"
 using namespace std;
