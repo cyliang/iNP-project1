@@ -24,7 +24,10 @@ bool create_process(int in_fd, int out_fd, int err_fd, const std::vector<std::st
 	int check_pipe[2];
 	pipe(check_pipe);
 
-	if ((pid = fork()) == 0) {
+	do {
+		pid = fork();
+	} while (pid == -1);
+	if (pid == 0) {
 		// child
 		close(check_pipe[0]);
 		fcntl(check_pipe[1], F_SETFD, FD_CLOEXEC);

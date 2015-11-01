@@ -43,7 +43,13 @@ void Pipe::cancel_write() {
 }
 
 int Pipe::read_fd() {
-	return input_count ? pipe_fd[0] : -1;
+	if (input_count) {
+		close(pipe_fd[1]);
+		pipe_fd[1] = -1;
+		return pipe_fd[0];
+	}
+
+	return -1;
 }
 
 Pipe::~Pipe() {
