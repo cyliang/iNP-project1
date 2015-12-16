@@ -70,7 +70,7 @@ inline
 vector<string> get_argv(istream &cmd) {
 	string arg;
 	vector<string> argv;
-	while ((cmd >> ws) && !strchr("|!>", cmd.peek()) && (cmd >> arg)) {
+	while ((cmd >> ws) && !strchr("|!><", cmd.peek()) && (cmd >> arg)) {
 		argv.push_back(arg);
 	}
 
@@ -103,7 +103,9 @@ void parse_cmd(istream &cmd) {
 		int stdout_at = -1;
 		int stderr_at = -1;
 		bool file_redirection = false;
-		while ((cmd >> ws) && strchr("|!>", cmd.peek())) {
+		bool file_in_redirection = false;
+		while ((cmd >> ws) && strchr("|!><", cmd.peek())) {
+			string filename;
 			switch (cmd.get()) {
 				case '|':
 					if (isdigit(cmd.peek())) {
@@ -135,7 +137,6 @@ void parse_cmd(istream &cmd) {
 					break;
 
 				case '>':
-					string filename;
 					cmd >> filename; // file name
 
 					if (newps_stdout != STDOUT_FILENO)
@@ -149,6 +150,22 @@ void parse_cmd(istream &cmd) {
 						return;
 					}
 					file_redirection = true;
+					break;
+
+				case '<':
+					cmd >> filename; // file name
+
+					if (newps_stdin != STDIN_FILENO)
+						break;
+
+					newps_stdin = open(filename.c_str(), O_RDONLY | O_CLOEXEC);
+
+					if (newps_stdin == -1) {
+						cout << "Cannot open file: " << filename << endl;
+						delete inPipe;
+						return;
+					}
+					file_in_redirection = true;
 					break;
 			}
 		}
@@ -169,6 +186,9 @@ void parse_cmd(istream &cmd) {
 		delete inPipe;
 		if (file_redirection) {
 			close(newps_stdout);
+		}
+		if (file_in_redirection) {
+			close(newps_stdin);
 		}
 
 		terminate |= file_redirection || stdout_at != -1 || stderr_at != -1;
